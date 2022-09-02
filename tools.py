@@ -45,6 +45,22 @@ def save_classifier(classifier, filename):
     pickle.dump(classifier, open(file_path, 'wb'))
 
 
+def import_classifier(filename):
+    """
+    Use pickle to import a previously saved classifier also with pickle module. If the file does not exist, the
+    function return is None.
+    :param filename: 'str' indicating the name of the classifier to be imported.
+    :return: A svm classifier.
+    """
+    file_path = 'classifiers/' + filename + 'model_pkl'
+    if not os.path.exists(file_path):
+        return None
+    else:
+        clf = pickle.load(open(file_path, 'rb'))
+
+    return clf
+
+
 def train_classifier(classifier, dataset):
     """
     Train a sklearn classifier from a dataset, then shows the time spent in the training and the
