@@ -8,6 +8,7 @@ from digit import Digit
 
 class RealDataset:
     def __init__(self, n_images=40):
+        self.width = 14
         self.n_images = n_images
         self.data = dict()
         self.import_images()
@@ -30,7 +31,7 @@ class RealDataset:
             image = io.imread(path, as_gray=True)
 
             # Changing the size to meet the classifier number of parameters
-            image = -resize(image, (28, 28), anti_aliasing=False)
+            image = -resize(image, (self.width, self.width), anti_aliasing=False)
 
             # Mapping the image from 0 to 1 with a lineal function
             image = exposure.rescale_intensity(image)
@@ -40,16 +41,15 @@ class RealDataset:
             image = np.where(image > threshold, image, 0)
 
             # Transform the matrix(image) into a 1d vector
-            image = image.reshape((784,))
+            image = image.reshape((self.width*self.width,))
 
             # Storing the vectors and targets
             self.data['data'].append(image)
             self.data['targets'].append(str(i % 10))
-            file = 'classifiers/black_background'
 
     def show_image(self, index):
         image = self.X[index]
-        image = image.reshape(28, 28)
+        image = image.reshape(self.width, self.width)
         plt.figure()
         plt.gray()
         plt.matshow(image)
