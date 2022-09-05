@@ -1,7 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import math
-from skimage.transform import resize
 
 
 def compute_entropy(image):
@@ -16,11 +14,6 @@ class Digit:
     def __init__(self, data, target):
         self.width = 14
         self.target = target
-        if self.width != 28:
-            size = int(math.sqrt(len(data)))
-            data = data.reshape((size, size))
-            data = resize(data, (self.width, self.width), anti_aliasing=True)
-            data = data.reshape((self.width*self.width))
         self.image = data
         self.features = {'var': 0.0, 'std': 0.0,
                          'mean': 0.0, 'entropy': 0.0}

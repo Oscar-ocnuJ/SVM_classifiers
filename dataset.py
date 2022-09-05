@@ -1,6 +1,9 @@
 import matplotlib.pyplot as plt
 from digit import Digit
 from sklearn.preprocessing import StandardScaler
+from skimage.transform import resize
+import math
+import numpy as np
 
 
 class Dataset:
@@ -13,7 +16,21 @@ class Dataset:
             size = self.length
         self.scaler = StandardScaler()
         self.targets = data['target'][0:size]
-        self.data = data['data'].to_numpy()[0:size]
+        data = data['data'].to_numpy()[0:size]
+
+        # Changing the size of the images if desired
+
+        self.width = 14
+        if self.width != 28:
+            data_resized = np.ndarray((size, self.width*self.width))
+            size = int(math.sqrt(data.shape[1]))
+            for image, i in zip(data, range(data.shape[0])):
+                image = image.reshape((size, size))
+                image = resize(image, (self.width, self.width), anti_aliasing=True)
+                data_resized[i] = image.reshape((self.width*self.width))
+            self.data = data_resized
+        else:
+            self.data = data
         self.digits = []
         self.create_digits()
         self.X_train = []
