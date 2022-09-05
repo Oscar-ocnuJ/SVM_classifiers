@@ -18,8 +18,7 @@ class Dataset:
         self.targets = data['target'][0:size]
         data = data['data'].to_numpy()[0:size]
 
-        # Changing the size of the images if desired
-
+        # When changing the 'width' parameter, we resize the images, from MNIST the with is 28X28
         self.width = 14
         if self.width != 28:
             data_resized = np.ndarray((size, self.width*self.width))
@@ -31,6 +30,7 @@ class Dataset:
             self.data = data_resized
         else:
             self.data = data
+
         self.digits = []
         self.create_digits()
         self.X_train = []
