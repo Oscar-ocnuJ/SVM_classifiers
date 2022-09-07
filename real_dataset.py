@@ -8,7 +8,7 @@ from digit import Digit
 
 class RealDataset:
     def __init__(self, n_images=40):
-        self.width = 14
+        self.width = 28
         self.n_images = n_images
         self.data = dict()
         self.import_images()

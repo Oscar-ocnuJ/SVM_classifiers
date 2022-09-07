@@ -33,13 +33,15 @@ class Dataset:
         key_value = {}
         for i in sorted(c.keys()):
             key_value[i] = c[i]
+
+        ax = plt.axes()
+        ax.set_axisbelow(True)
+        ax.yaxis.grid()
         plt.interactive(False)
         plt.bar(key_value.keys(), key_value.values())
         plt.xlabel('Labels')
         plt.ylabel('Occurrence')
         plt.title('Occurrence of MNIST dataset labels')
-        ax = plt.axes()
-        ax.grid(which='major', axis='y')
         plt.show()
         return info
 
@@ -69,13 +71,15 @@ class Dataset:
         for i in sorted(train.keys()):
             key_value_train[i] = train[i]
 
-        p1 = plt.bar(key_value_train.keys(), key_value_train.values(), width=0.5)
-        p2 = plt.bar(key_value_test.keys(), key_value_test.values(), width=0.5, bottom=list(key_value_train.values()))
+        ax = plt.axes()
+        ax.set_axisbelow(True)
+        ax.yaxis.grid()
+
+        p1 = plt.bar(key_value_train.keys(), key_value_train.values(), width=0.75)
+        p2 = plt.bar(key_value_test.keys(), key_value_test.values(), width=0.75, bottom=list(key_value_train.values()))
 
         plt.legend((p1[0], p2[0]), ('Training set', 'Test set'), loc='lower left')
         plt.xlabel('Labels')
         plt.ylabel('Occurrence')
         plt.title('Occurrence of training and testing sets')
-        ax = plt.axes()
-        ax.grid(which='major', axis='y')
         plt.show()
