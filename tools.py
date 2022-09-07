@@ -70,6 +70,8 @@ def train_classifier(classifier, dataset):
     as attributes. :return:
     """
     t = time.process_time()
+    dataset.scaler_fit_transform(dataset.X_train)
+    dataset.dump_scaler()
     classifier.fit(dataset.X_train, dataset.y_train)
     print('Processing time: ' + str(round((time.process_time() - t), 2)) + ' s')
     print('Accuracy on training set: ' + str(round(classifier.score(dataset.X_train, dataset.y_train), 2)))
