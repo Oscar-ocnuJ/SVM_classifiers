@@ -118,7 +118,7 @@ class Dataset:
         result = cv2.resize(cropped_img, (resize_width, resize_height))
         result = np.pad(result, pad_spec, mode='constant')
         assert result.shape[0] == height and result.shape[1] == width
-        toto taga
+
         return result
 
     def scaler_fit_transform(self, data):
