@@ -7,7 +7,7 @@ from dataset import Dataset
 
 
 # Python script with all the required functions
-def import_mnist_dataset(n_samples):
+def import_mnist_dataset(n_samples, apply_zoom=False):
     """
     Import n_samples from MNIST dataset directly from the datasets' folder, if it is not found, it will be downloaded
     from the official website. The original MNIST dataset has 70_000 samples
@@ -24,7 +24,7 @@ def import_mnist_dataset(n_samples):
     print("MNIST dataset imported with success!")
 
     print('Choosing a fraction of the MNIST dataset to train and test the classifier...')
-    dataset = Dataset(mnist, n_samples)
+    dataset = Dataset(mnist, n_samples, apply_zoom)
     print(f'Dataset of {n_samples} samples created from MNIST!')
 
     return dataset
