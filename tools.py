@@ -7,11 +7,12 @@ from dataset import Dataset
 
 
 # Python script with all the required functions
-def import_mnist_dataset(n_samples, apply_zoom=False):
+def import_mnist_dataset(n_samples, transform=False):
     """
     Import n_samples from MNIST dataset directly from the datasets' folder, if it is not found, it will be downloaded
     from the official website. The original MNIST dataset has 70_000 samples
     :param n_samples: The number of samples to create a subset from MNIST.
+    :param transform: Control parameter to enable the transformation in the set.
     :return: A 'Dataset' object whit. See 'Dataset' class documentation.
     """
     mnist_path = r'datasets/mnist_784_full.dataset_job'
@@ -24,7 +25,7 @@ def import_mnist_dataset(n_samples, apply_zoom=False):
     print("MNIST dataset imported with success!")
 
     print('Choosing a fraction of the MNIST dataset to train and test the classifier...')
-    dataset = Dataset(mnist, n_samples, apply_zoom)
+    dataset = Dataset(mnist, n_samples, transform)
     print(f'Dataset of {n_samples} samples created from MNIST!')
 
     return dataset
@@ -52,7 +53,7 @@ def import_classifier(filename):
     :param filename: 'str' indicating the name of the classifier to be imported.
     :return: A svm classifier.
     """
-    file_path = 'classifiers/' + filename + 'model_pkl'
+    file_path = 'classifiers/' + filename + '.model_pkl'
     if not os.path.exists(file_path):
         return None
     else:
@@ -71,7 +72,6 @@ def train_classifier(classifier, dataset):
     """
     t = time.process_time()
     dataset.scaler_fit_transform(dataset.X_train)
-    dataset.dump_scaler()
     classifier.fit(dataset.X_train, dataset.y_train)
     print('Processing time: ' + str(round((time.process_time() - t), 2)) + ' s')
     print('Accuracy on training set: ' + str(round(classifier.score(dataset.X_train, dataset.y_train), 2)))

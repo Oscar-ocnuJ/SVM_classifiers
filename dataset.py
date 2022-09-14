@@ -1,77 +1,42 @@
 import math
-import time
-
-import numpy as np
 import matplotlib.pyplot as plt
 from digit import Digit
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
+from skimage.transform import warp, AffineTransform
 import cv2
-import pickle
+import numpy as np
+from torchvision import transforms
 
 
-def zoom_in_out(image, zoom_factor):
-
-    # If the zoom_factor equals to 1, return the same image
-    if zoom_factor == 1:
-        return image
-
-    height, width = image.shape[:2]  # It is also the final desired size
-    new_height, new_width = int(height * zoom_factor), int(width * zoom_factor)
-
-    # # Crop only the part that will remain in the result (more efficient)
-    # Centered bbox of the final desired size in resized (larger/smaller) image coordinates
-    y1, x1 = max(0, new_height - height), max(0, new_width - width) // 2
-    y2, x2 = y1 + height, x1 + width
-    bbox = np.array([y1, x1, y2, x2])
-
-    # Map back to original image coordinates
-    bbox = (bbox / zoom_factor).astype(int)
-    y1, x1, y2, x2 = bbox
-    cropped_img = image[y1:y2, x1:x2]
-
-    # Handle padding when downscaling
-    resize_height, resize_width = min(new_height, height), min(new_width, width)
-    pad_height1, pad_width1 = (height - resize_height) // 2, (width - resize_width) // 2
-    pad_height2, pad_width2 = (height - resize_height) - pad_height1, (width - resize_width) - pad_width1
-    pad_spec = [(pad_height1, pad_height2), (pad_width1, pad_width2)] + [(0, 0)] * (image.ndim - 2)
-
-    # Resize the cropped image
-    zoomed_image = cv2.resize(cropped_img, (resize_width, resize_height))
-    zoomed_image = np.pad(zoomed_image, pad_spec, mode='constant')
-    assert zoomed_image.shape[0] == height and zoomed_image.shape[1] == width
-
-    return zoomed_image
+def save_image(filename):
+    filepath = 'figures/' + filename + '.eps'
+    if not os.path.exists(filepath):
+        plt.savefig(filepath, format='eps')
 
 
 class Dataset:
-    def __init__(self, data, size=0, apply_zoom=False):
+    def __init__(self, data, size=0, transform=False):
 
         self.length = int((len(data['data'])))
         if 0 < size < self.length:
             self.length = size
         else:
             size = self.length
-        self.width = int(math.sqrt(data.data.shape[1]))
-        self.scaler = StandardScaler()
-        self.targets = data['target'][0:size]
+
+        self.width = 28
+
+        targets = data['target'][0:size]
+        self.targets = targets
         self.data = data['data'].to_numpy()[0:size]
 
-        if apply_zoom:
-            t0 = time.time()
-            n_images_to_zoom = 1000
-            zoom_factors = [round(0.1*x, 2) for x in range(4, 4 + int(n_images_to_zoom/100))]
-            zoom_factor = zoom_factors[0]
-            for image, i in zip(self.data, range(n_images_to_zoom)):
-                if (i % 100) == 0:
-                    zoom_factor = zoom_factors[int(i/100)]
-                    print(zoom_factor, i)
-                zoomed_image = zoom_in_out(image.reshape((self.width, self.width)), zoom_factor)
-                self.data[i] = zoomed_image.reshape((self.width*self.width))
+        self.transform = transform
 
-            print(f"Zooming {n_images_to_zoom} images has taken {1000*(time.time() - t0)} ms.")
+        self.scaler = MinMaxScaler()
+        self.scaler.fit(self.data)
 
         self.digits = []
         self.create_digits()
+
         self.X_train = []
         self.y_train = []
         self.X_test = []
@@ -98,6 +63,8 @@ class Dataset:
         plt.xlabel('Labels')
         plt.ylabel('Occurrence')
         plt.title('Occurrence of MNIST dataset labels')
+        filename = 'occurence_mnist_labels'
+        save_image(filename)
         plt.show()
         return info
 
@@ -106,8 +73,30 @@ class Dataset:
 
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.data, self.targets,
                                                                                 test_size=test_size_ratio)
-        self.X_train = self.X_train / 255
-        self.X_test = self.X_test / 255
+        # Data normalization
+        # self.X_train = self.X_train / 255
+        # self.X_test = self.X_test / 255
+        self.X_train = self.scaler.transform(self.X_train)
+        if self.transform:
+            random_choice = np.random.randint(0, 3)
+            for i in range(2000):
+                image = self.X_train[i].reshape((self.width, self.width))
+                if random_choice == 0:
+                    rotate_object = RandomRotate()
+                    image = rotate_object(image)
+                if random_choice == 1:
+                    horizontal_translate_object = RandomHorizontalTranslate()
+                    image = horizontal_translate_object(image)
+                if random_choice == 2:
+                    vertical_translate_object = RandomVerticalTranslate()
+                    image = vertical_translate_object(image)
+                if random_choice == 3:
+                    zoom_object = RandomZoom()
+                    image = zoom_object(image)
+                self.X_train[i] = image.reshape((self.width*self.width,))
+
+        self.X_test = self.scaler.transform(self.X_test)
+
         print('Size of training set: ' + str(len(self.y_train)) + '/' + str(len(self.data)))
         print('Size of testing set: ' + str(len(self.y_test)) + '/' + str(len(self.data)))
 
@@ -138,16 +127,85 @@ class Dataset:
         plt.xlabel('Labels')
         plt.ylabel('Occurrence')
         plt.title('Occurrence of training and testing sets')
+        filename = 'occurrence_training_testing_sets'
+        save_image(filename)
         plt.show()
 
 
-    def scaler_fit_transform(self, data):
-        self.scaler.fit_transform(data)
+class RandomRotate(object):
+    """Rotate randomly"""
 
-    def scaler_fit(self, data):
-        self.scaler.fit(data)
-    def dump_scaler(self, filename='scaler.pkl'):
-        pickle.dump(self.scaler, filename)
+    def __init__(self):
+        self.angles = [0, np.pi / 2, np.pi, 3 * np.pi / 2]
 
-    def load_scaler(self, filename='scaler.pkl'):
-        self.scaler = pickle.load(filename)
+    def __call__(self, image):
+        image = image.copy()
+        arg = np.random.randint(0, 4)
+        image = warp(image, AffineTransform(rotation=self.angles[arg]), mode='reflect')
+        return image
+
+
+class RandomHorizontalTranslate(object):
+    """Translate Horizontally randomly"""
+
+    def __call__(self, image):
+        image = image.copy()
+        steps = [image.shape[0] // 8, image.shape[0] // 4, image.shape[0] // 2, 0]
+        arg = np.random.randint(0, 4)
+        image = warp(image, AffineTransform(translation=(steps[arg], 0)), mode='reflect')
+        return image
+
+
+class RandomVerticalTranslate(object):
+    """ Translate Vertically randomly"""
+
+    def __call__(self, image):
+        image = image.copy()
+        steps = [image.shape[1] // 8, image.shape[1] // 4, image.shape[1] // 2, 0]
+        arg = np.random.randint(0, 4)
+        image = warp(image, AffineTransform(translation=(0, steps[arg])), mode='reflect')
+        return image
+
+
+class RandomZoom(object):
+    """Zoom randomly"""
+
+    def __call__(self, image):
+        image = image.copy()
+
+        random_zoom_factor = 0.1 * np.random.randint(7, 12)
+
+        height, width = image.shape[:2]  # It is also the final desired size
+        new_height, new_width = int(height * random_zoom_factor), int(width * random_zoom_factor)
+
+        # # Crop only the part that will remain in the result (more efficient)
+        # Centered bbox of the final desired size in resized (larger/smaller) image coordinates
+        y1, x1 = max(0, new_height - height), max(0, new_width - width) // 2
+        y2, x2 = y1 + height, x1 + width
+        bbox = np.array([y1, x1, y2, x2])
+
+        # Map back to original image coordinates
+        bbox = (bbox / random_zoom_factor).astype(int)
+        y1, x1, y2, x2 = bbox
+        cropped_img = image[y1:y2, x1:x2]
+
+        # Handle padding when downscaling
+        resize_height, resize_width = min(new_height, height), min(new_width, width)
+        pad_height1, pad_width1 = (height - resize_height) // 2, (width - resize_width) // 2
+        pad_height2, pad_width2 = (height - resize_height) - pad_height1, (width - resize_width) - pad_width1
+        pad_spec = [(pad_height1, pad_height2), (pad_width1, pad_width2)] + [(0, 0)] * (image.ndim - 2)
+
+        # Resize the cropped image
+        image = cv2.resize(cropped_img, (resize_width, resize_height))
+        image = np.pad(image, pad_spec, mode='constant')
+        assert image.shape[0] == height and image.shape[1] == width
+
+        return image
+
+
+train_transform = transforms.Compose([
+    RandomZoom(),
+    RandomRotate(),
+    RandomVerticalTranslate(),
+    RandomHorizontalTranslate()
+])
