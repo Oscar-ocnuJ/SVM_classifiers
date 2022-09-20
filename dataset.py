@@ -1,4 +1,5 @@
 import math
+import os
 import matplotlib.pyplot as plt
 from digit import Digit
 from sklearn.preprocessing import MinMaxScaler
@@ -113,8 +114,13 @@ class Dataset:
 
         for i in sorted(test.keys()):
             key_value_test[i] = test[i]
+
         for i in sorted(train.keys()):
             key_value_train[i] = train[i]
+
+        for key in key_value_train:
+            if key not in key_value_test:
+                key_value_test[key] = 0
 
         ax = plt.axes()
         ax.set_axisbelow(True)
