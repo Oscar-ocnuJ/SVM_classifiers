@@ -46,6 +46,12 @@ def save_classifier(classifier, filename):
     pickle.dump(classifier, open(file_path, 'wb'))
 
 
+def save_results(results, filename):
+    file_path = 'results/' + filename + '.results_pkl'
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    pickle.dump(results, open(file_path, 'wb'))
+
 def save_search_results(search_result, filename):
     """
     Save a result from a random or grid search of parameters.
