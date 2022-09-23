@@ -9,10 +9,12 @@ from tools import *
 from real_dataset import RealDataset
 import matplotlib.pyplot as plt
 
-performance_vs_samples = {'kernel': 'linear',
+
+performance_vs_samples = {'kernel': 'Linear SVC',
                           'dataset_sizes': list(),
                           'train_set_acc': list(),
                           'test_set_acc': list(),
+                          'real_set_acc': list(),
                           'processing_times': list(),
                           'total_processing_time': list()}
 
@@ -38,11 +40,10 @@ for size in performance_vs_samples['dataset_sizes']:
 
     # LinearSVC classifier
     # print('Training a linear SVM classifier, one-vs-the-rest approach...')
-    print('Training a SVC ' + performance_vs_samples['kernel'] + ' kernel classifier... ')
-    clf = svm.SVC(kernel=performance_vs_samples['kernel'])
+    print('Training a SVC ' + performance_vs_samples['kernel'] + ' classifier... ')
+    clf = svm.LinearSVC()
 
     t_clf = time.process_time()
-    # dataset.scaler_fit_transform(dataset.X_train)
     clf.fit(dataset.X_train, dataset.y_train)
     accuracy_train_set = round(clf.score(dataset.X_train, dataset.y_train), 2)
     accuracy_test_set = round(clf.score(dataset.X_test, dataset.y_test), 2)
@@ -58,6 +59,7 @@ for size in performance_vs_samples['dataset_sizes']:
 
     performance_vs_samples['train_set_acc'].append(accuracy_train_set)
     performance_vs_samples['test_set_acc'].append(accuracy_test_set)
+    performance_vs_samples['real_set_acc'].append(accuracy_real_set)
     performance_vs_samples['processing_times'].append(processing_time)
 
 total_processing_time = round((time.process_time() - t0), 4)
@@ -68,6 +70,29 @@ pickle.dump(performance_vs_samples, open(filename, 'wb'))
 
 # Plotting the performance
 plt.figure()
-plt.plot(dataset_sizes, train_set_acc, color='blue')
-plt.plot(dataset_sizes, test_set_acc, color='blue', linestyle='dashed')
+fig, ax1 = plt.subplots()
+color = 'tab:blue'
+ax1.set_xlabel('Number of samples', fontsize=12)
+ax1.set_ylabel('Accuracy', color=color)
+ax1.semilogx(performance_vs_samples['dataset_sizes'], performance_vs_samples['train_set_acc'], '-bo',
+             label='Training set')
+ax1.semilogx(performance_vs_samples['dataset_sizes'], performance_vs_samples['test_set_acc'], '--b^', label='Test set')
+ax1.semilogx(performance_vs_samples['dataset_sizes'], performance_vs_samples['real_set_acc'], '-.bs', label='Own set')
+ax1.tick_params(axis='y', labelcolor=color)
+plt.grid(which='both', linestyle='dashed')
+plt.legend(loc='best')
+plt.title("Performance of " + performance_vs_samples['kernel'] + " classifier", fontsize=14)
+
+ax2 = ax1.twinx()
+color = 'tab:red'
+ax2.set_ylabel('Time [s]', color=color)
+ax2.plot(performance_vs_samples['dataset_sizes'], performance_vs_samples['processing_times'], '-r>',
+         label='Processing time')
+ax2.tick_params(axis='y', labelcolor=color)
+
+fig.tight_layout()
+filename = 'performance_svc_' + performance_vs_samples['kernel']
+path = 'figures/' + filename + '.eps'
+plt.savefig(path, format='eps')
 plt.show()
+

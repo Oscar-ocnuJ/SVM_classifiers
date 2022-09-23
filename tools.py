@@ -46,6 +46,29 @@ def save_classifier(classifier, filename):
     pickle.dump(classifier, open(file_path, 'wb'))
 
 
+def save_search_results(search_result, filename):
+    """
+    Save a result from a random or grid search of parameters.
+    :param search_result: Result of a search process.
+    :param filename: The filename to be saved.
+    :return: The results saved in the results' folder.
+    """
+    file_path = 'results/' + filename + '.cv_results_pkl'
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    pickle.dump(search_result, open(file_path, 'wb'))
+
+
+def import_search_results(filename):
+    file_path = 'results/' + filename + '.cv_results_pkl'
+    if not os.path.exists(file_path):
+        return None
+    else:
+        search_results = pickle.load(open(file_path, 'rb'))
+
+    return search_results
+
+
 def import_classifier(filename):
     """
     Use pickle to import a previously saved classifier also with pickle module. If the file does not exist, the
@@ -60,7 +83,6 @@ def import_classifier(filename):
         clf = pickle.load(open(file_path, 'rb'))
 
     return clf
-
 
 def train_classifier(classifier, dataset):
     """
