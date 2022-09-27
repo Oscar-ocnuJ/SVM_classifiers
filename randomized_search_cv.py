@@ -1,5 +1,4 @@
 # Random Search SVM classifier model on digit recognition
-import joblib
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.utils.fixes import loguniform
 import time
@@ -9,19 +8,25 @@ import pandas as pd
 from tools import *
 from real_dataset import RealDataset
 import matplotlib.pyplot as plt
+from glob import glob
 
 
 class Kernel:
-    def __int__(self, name):
+    def __init__(self, name):
         self.name = name
-        self.result = None
-        self.processing_time = 0
+        self.result = [None] * 2
+        self.processing_time = [None] * 2
 
 
 class TestRandomizedSearchCV:
-    def __init__(self, space, n_iterations=10_000):
+    def __init__(self):
+        # Define search space
+        space = dict()
+        space['C'] = loguniform(1e-5, 1e5)
+        space['gamma'] = loguniform(1e-15, 1e5)
+
         self.space = space
-        self.n_iterations = n_iterations
+        self.n_iterations = 1_000
 
         kernels = list()
         kernels.append(Kernel('LinearSVC'))
@@ -31,6 +36,19 @@ class TestRandomizedSearchCV:
         kernels.append(Kernel('sigmoid'))
         self.kernels = kernels
 
+        # Fill object
+        base_name = 'randomized_search_cv_SVC_*'
+        if glob('results/' + base_name):
+            # Load the previous test
+            for kernel, i in zip(kernels, range(len(kernels))):
+                self.kernels[i].result[0] = import_results(base_name.strip('*') + kernel.name)
+
+            kernels[3].result[1] = import_results(base_name.strip('*') + 'rbf_gamma')
+
+        else:
+            # Launch search
+            self.search()
+
     def search(self, n_samples_in_dataset=500, test_ratio=0.2):
         # Loading a subset from MNIST dataset
         dataset = import_mnist_dataset(n_samples_in_dataset)
@@ -39,8 +57,10 @@ class TestRandomizedSearchCV:
         # Split the MNIST dataset in training and testing sets
         print("Separating dataset in training and testing sets ...")
         dataset.separate_train_test(test_ratio)
-        print(f"Dataset separated, we have a {100*test_ratio} % of samples for the test set!")
+        print(f"Dataset separated, we have a {100 * test_ratio} % of samples for the test set!")
 
+        print("Randomized search for 'C' parameter...")
+        space = {'C': self.space['C']}
         for kernel, i in zip(self.kernels, range(len(self.kernels))):
 
             if kernel.name == 'LinearSVC':
@@ -49,55 +69,99 @@ class TestRandomizedSearchCV:
                 clf = svm.SVC(kernel=kernel.name)
 
             # Define search
-            search = RandomizedSearchCV(clf, self.space, n_iter=self.n_iterations, n_jobs=-1, random_state=1, verbose=3)
+            search = RandomizedSearchCV(clf, space, n_iter=self.n_iterations, n_jobs=-1, random_state=1, verbose=3)
 
+            print(100 * '-')
+            print(f"Randomized Search CV in a SVC {kernel.name} classifier!")
             # Execute search
             print("Executing search...")
             t = time.process_time()
             result = search.fit(dataset.X_train, dataset.y_train)
-            self.kernels[i].result = result
+            filename = 'randomized_search_cv_SVC_' + kernel.name
+            save_results(result, filename)
+            self.kernels[i].result[0] = result
             print("Randomized search executed, best solution found!")
 
             # Summarize result
-            print(f'Time spent in {n_iterations} iterations of search : {time.process_time() - t}')
+            processing_time = time.process_time() - t
+            self.kernels[i].processing_time[0] = processing_time
+            print(f'Time spent in {self.n_iterations} iterations of search : {processing_time}')
             print('Best Score: %s' % result.best_score_)
             print('Best Hyperparameters: %s' % result.best_params_)
 
+        print("Randomized search for 'gamma' parameter in SVC 'rbf' classifier")
+        space = {'gamma': self.space['gamma']}
+        clf = svm.SVC(kernel='rbf')
+
+        # Define search
+        search = RandomizedSearchCV(clf, space, n_iter=self.n_iterations, n_jobs=-1, random_state=1, verbose=3)
+
+        print(100 * '-')
+        print(f"Randomized Search CV in a SVC 'rbf' classifier!")
+        # Execute search
+        print("Executing search...")
+        t = time.process_time()
+        result = search.fit(dataset.X_train, dataset.y_train)
+        filename = 'randomized_search_cv_SVC_' + 'rbf_gamma'
+        save_results(result, filename)
+        self.kernels[3].result[1] = result
+        print("Randomized search executed, best solution found!")
+
+        # Summarize result
+        processing_time = time.process_time() - t
+        self.kernels[3].processing_time[1] = processing_time
+        print(f'Time spent in {self.n_iterations} iterations of search : {processing_time}')
+        print('Best Score: %s' % result.best_score_)
+        print('Best Hyperparameters: %s' % result.best_params_)
+
+    def plot_results(self, save=False):
+        plt.figure()
+        plt.xlabel('C', fontsize=14)
+        plt.ylabel('Accuracy [%]')
+
+        for kernel in self.kernels:
+            cv_results_ = kernel.result[0].cv_results_
+            c_values = cv_results_['param_C']
+            score_values = 100 * cv_results_['mean_test_score']
+            c_values, score_values = (list(t) for t in zip(*sorted(zip(c_values, score_values))))
+
+            plt.semilogx(c_values, score_values, label=kernel.name)
+
+        plt.grid(which='both', linestyle='dashed')
+        plt.legend(loc='best')
+        plt.title("Randomized search for SVC classifiers - 'C'", fontsize=14)
+        if save:
+            filename = 'randomized_search_vs_C'
+            path = 'figures/' + filename + '.eps'
+            if os.path.exists(path):
+                os.remove(path)
+            plt.savefig(path, format='eps')
+        plt.show()
+
+        plt.figure()
+        plt.xlabel('gamma', fontsize=14)
+        plt.ylabel('Accuracy [%]')
+
+        kernel = self.kernels[3]
+        result = kernel.result[1].cv_results_
+        gamma_values = result['param_gamma']
+        score_values = 100 * result['mean_test_score']
+        gamma_values, score_values = (list(t) for t in zip(*sorted(zip(gamma_values, score_values))))
+        plt.semilogx(gamma_values, score_values, label=kernel.name)
+        plt.grid(which='both', linestyle='dashed')
+        plt.legend(loc='best')
+        plt.title("Randomized search for SVC classifiers - 'gamma'", fontsize=14)
+        if save:
+            filename = 'randomized_search_vs_gamma'
+            path = 'figures/' + filename + '.eps'
+            if os.path.exists(path):
+                os.remove(path)
+            plt.savefig(path, format='eps')
+        plt.show()
 
 
-
-# Define search space
-print("Defining the search space...")
-space = dict()
-# space['kernel'] = ['sigmoid']
-space['C'] = loguniform(1e-5, 1e5)
-# space['gamma'] = loguniform(1e-15, 1e5)
-print("Search space defined!")
-
-# Define search
-print("Defining search...")
-n_iterations = 10000
-search = RandomizedSearchCV(clf, space, n_iter=n_iterations, scoring='accuracy', n_jobs=-1, random_state=1, verbose=3)
-print("Search defined!")
-
-# Execute search
-print("Executing search...")
-t = time.process_time()
-result = search.fit(dataset.X_train, dataset.y_train)
-
-
-
-# Results in test set
-clf = result.best_estimator_
-print(f"Score in test set: {clf.score(dataset.X_test, dataset.y_test)}")
-
-# Results in real images set
-real_dataset = RealDataset()
-print(f"Score in real set: {clf.score(real_dataset.X, real_dataset.y)}")
-
-# Saving the search results
-filename = 'randomized_search_cv_SVC_' + 'LinearSVC'
-save_search_results(result, filename)
-
-
+# Executing search
+randomized_search_cv = TestRandomizedSearchCV()
+# Plot search
+randomized_search_cv.plot_results()
 
