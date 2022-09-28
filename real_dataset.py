@@ -2,16 +2,16 @@ import numpy as np
 from matplotlib import pyplot as plt
 from skimage import io, exposure
 from skimage.transform import resize
-from skimage.morphology import dilation, square
 from digit import Digit
 
 
 class RealDataset:
-    def __init__(self, n_images=40):
+    def __init__(self, n_images=40, threshold=0.1):
         self.width = 28
         self.n_images = n_images
         self.data = dict()
-        self.import_images()
+        self.threshold = threshold
+        self.import_images(self.threshold)
         self.X = self.data['data']
         self.y = self.data['targets']
         self.digits = []
@@ -21,7 +21,7 @@ class RealDataset:
         for i in range(self.n_images):
             self.digits.append(Digit(self.X[i], self.y[i]))
 
-    def import_images(self):
+    def import_images(self, threshold):
         self.data['data'] = list()
         self.data['targets'] = list()
         for i in range(self.n_images):
@@ -37,7 +37,7 @@ class RealDataset:
             image = exposure.rescale_intensity(image)
 
             # Thresholding the image to accentuate the white background
-            threshold = 0.10
+            threshold = threshold
             image = np.where(image > threshold, image, 0)
 
             # Transform the matrix(image) into a 1d vector

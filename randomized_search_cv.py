@@ -2,11 +2,8 @@
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.utils.fixes import loguniform
 import time
-from dataset import Dataset
 from sklearn import svm
-import pandas as pd
 from tools import *
-from real_dataset import RealDataset
 import matplotlib.pyplot as plt
 from glob import glob
 
@@ -71,13 +68,15 @@ class TestRandomizedSearchCV:
             # Define search
             search = RandomizedSearchCV(clf, space, n_iter=self.n_iterations, n_jobs=-1, random_state=1, verbose=3)
 
+            # Execute search
             print(100 * '-')
             print(f"Randomized Search CV in a SVC {kernel.name} classifier!")
-            # Execute search
             print("Executing search...")
             t = time.process_time()
             result = search.fit(dataset.X_train, dataset.y_train)
             filename = 'randomized_search_cv_SVC_' + kernel.name
+
+            # Saving results
             save_results(result, filename)
             self.kernels[i].result[0] = result
             print("Randomized search executed, best solution found!")
@@ -115,7 +114,8 @@ class TestRandomizedSearchCV:
         print('Best Hyperparameters: %s' % result.best_params_)
 
     def plot_results(self, save=False):
-        plt.figure()
+        fig_size = (6.4, 3.5)
+        plt.figure(figsize=fig_size)
         plt.xlabel('C', fontsize=14)
         plt.ylabel('Accuracy [%]')
 
@@ -127,6 +127,7 @@ class TestRandomizedSearchCV:
 
             plt.semilogx(c_values, score_values, label=kernel.name)
 
+        plt.tight_layout()
         plt.grid(which='both', linestyle='dashed')
         plt.legend(loc='best')
         plt.title("Randomized search for SVC classifiers - 'C'", fontsize=14)
@@ -138,7 +139,7 @@ class TestRandomizedSearchCV:
             plt.savefig(path, format='eps')
         plt.show()
 
-        plt.figure()
+        plt.figure(figsize=fig_size)
         plt.xlabel('gamma', fontsize=14)
         plt.ylabel('Accuracy [%]')
 
@@ -151,6 +152,7 @@ class TestRandomizedSearchCV:
         plt.grid(which='both', linestyle='dashed')
         plt.legend(loc='best')
         plt.title("Randomized search for SVC classifiers - 'gamma'", fontsize=14)
+        plt.tight_layout()
         if save:
             filename = 'randomized_search_vs_gamma'
             path = 'figures/' + filename + '.eps'
@@ -163,5 +165,4 @@ class TestRandomizedSearchCV:
 # Executing search
 randomized_search_cv = TestRandomizedSearchCV()
 # Plot search
-randomized_search_cv.plot_results()
-
+randomized_search_cv.plot_results(save=True)
