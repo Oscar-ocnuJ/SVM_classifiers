@@ -127,10 +127,10 @@ class TestRandomizedSearchCV:
 
             plt.semilogx(c_values, score_values, label=kernel.name)
 
-        plt.tight_layout()
         plt.grid(which='both', linestyle='dashed')
         plt.legend(loc='best')
         plt.title("Randomized search for SVC classifiers - 'C'", fontsize=14)
+        plt.tight_layout()
         if save:
             filename = 'randomized_search_vs_C'
             path = 'figures/' + filename + '.eps'

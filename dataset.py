@@ -74,9 +74,7 @@ class Dataset:
 
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.data, self.targets,
                                                                                 test_size=test_size_ratio)
-        # Data normalization
-        # self.X_train = self.X_train / 255
-        # self.X_test = self.X_test / 255
+
         self.X_train = self.scaler.transform(self.X_train)
         if self.transform:
             random_choice = np.random.randint(0, 3)
