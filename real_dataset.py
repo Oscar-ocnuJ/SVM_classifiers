@@ -40,7 +40,7 @@ class RealDataset:
             image = -resize(image, (self.width, self.width), anti_aliasing=False)
 
             # Mapping the image from 0 to 1 with a lineal function
-            # image = exposure.rescale_intensity(image)
+            image = exposure.rescale_intensity(image)
 
             # Thresholding the image to accentuate the white background
             # image = np.where(image > threshold, image, 0)
