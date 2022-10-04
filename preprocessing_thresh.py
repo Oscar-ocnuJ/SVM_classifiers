@@ -23,10 +23,10 @@ class TestPreprocessing:
         kernels = list()
         length = len(self.threshold_values)
         kernels.append(Kernel('LinearSVC', 1_000, length))
-        kernels.append(Kernel('linear', 3_000, length))
+        kernels.append(Kernel('linear', 1_000, length))
         kernels.append(Kernel('poly', 2_000, length))
         kernels.append(Kernel('rbf', 12_000, length))
-        kernels.append(Kernel('sigmoid', 2_000, length))
+        kernels.append(Kernel('sigmoid', 1_000, length))
         self.kernels = kernels
 
         # Fill object
@@ -78,7 +78,7 @@ class TestPreprocessing:
 
             # Results in the own set
             for x, j in zip(self.threshold_values, range(len(self.threshold_values))):
-                real_dataset = RealDataset(threshold=x)
+                real_dataset = RealDataset(n_images=80, threshold=x)
                 accuracy = clf.score(real_dataset.X, real_dataset.y)
                 self.kernels[i].accuracies_own_set[j] = accuracy
 
