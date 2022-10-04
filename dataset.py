@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from digit import Digit
 from sklearn.preprocessing import MinMaxScaler
 from skimage.transform import warp, AffineTransform
+from skimage.filters import threshold_otsu
 import cv2
 import numpy as np
 from torchvision import transforms
@@ -76,9 +77,10 @@ class Dataset:
                                                                                 test_size=test_size_ratio)
 
         self.X_train = self.scaler.transform(self.X_train)
+
         if self.transform:
             random_choice = np.random.randint(0, 3)
-            for i in range(2000):
+            for i in range(int(self.length*0.5)):
                 image = self.X_train[i].reshape((self.width, self.width))
                 if random_choice == 0:
                     rotate_object = RandomRotate()
@@ -95,6 +97,15 @@ class Dataset:
                 self.X_train[i] = image.reshape((self.width*self.width,))
 
         self.X_test = self.scaler.transform(self.X_test)
+
+        # Binary images
+        # for i in range(len(self.X_train)):
+        #     thresh = threshold_otsu(self.X_train[i])
+        #     self.X_train[i] = np.where(self.X_train[i] > thresh, 1, 0)
+
+        # for i in range(len(self.X_test)):
+        #     thresh = threshold_otsu(self.X_test[i])
+        #     self.X_test[i] = np.where(self.X_test[i] > thresh, 1, 0)
 
         print('Size of training set: ' + str(len(self.y_train)) + '/' + str(len(self.data)))
         print('Size of testing set: ' + str(len(self.y_test)) + '/' + str(len(self.data)))
@@ -140,11 +151,11 @@ class RandomRotate(object):
     """Rotate randomly"""
 
     def __init__(self):
-        self.angles = [0, np.pi / 2, np.pi, 3 * np.pi / 2]
+        self.angles = [0, np.pi/12, -np.pi/12, np.pi/18, -np.pi/18]
 
     def __call__(self, image):
         image = image.copy()
-        arg = np.random.randint(0, 4)
+        arg = np.random.randint(0, 5)
         image = warp(image, AffineTransform(rotation=self.angles[arg]), mode='reflect')
         return image
 
@@ -154,7 +165,7 @@ class RandomHorizontalTranslate(object):
 
     def __call__(self, image):
         image = image.copy()
-        steps = [image.shape[0] // 8, image.shape[0] // 4, image.shape[0] // 2, 0]
+        steps = [image.shape[0] // 14, image.shape[0] // 7, image.shape[0] // 4, 0]
         arg = np.random.randint(0, 4)
         image = warp(image, AffineTransform(translation=(steps[arg], 0)), mode='reflect')
         return image
@@ -165,7 +176,7 @@ class RandomVerticalTranslate(object):
 
     def __call__(self, image):
         image = image.copy()
-        steps = [image.shape[1] // 8, image.shape[1] // 4, image.shape[1] // 2, 0]
+        steps = [image.shape[1] // 14, image.shape[1] // 7, image.shape[1] // 4, 0]
         arg = np.random.randint(0, 4)
         image = warp(image, AffineTransform(translation=(0, steps[arg])), mode='reflect')
         return image
@@ -177,7 +188,7 @@ class RandomZoom(object):
     def __call__(self, image):
         image = image.copy()
 
-        random_zoom_factor = 0.1 * np.random.randint(7, 12)
+        random_zoom_factor = 0.1 * np.random.randint(8, 12)
 
         height, width = image.shape[:2]  # It is also the final desired size
         new_height, new_width = int(height * random_zoom_factor), int(width * random_zoom_factor)

@@ -2,6 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from skimage import io, exposure
 from skimage.transform import resize
+from sklearn.preprocessing import MinMaxScaler
 from digit import Digit
 
 
@@ -12,7 +13,12 @@ class RealDataset:
         self.data = dict()
         self.threshold = threshold
         self.import_images(self.threshold)
-        self.X = self.data['data']
+
+        # Creating scaler
+        self.scaler = MinMaxScaler()
+        self.scaler.fit(self.data['data'])
+
+        self.X = self.scaler.transform(self.data['data'])
         self.y = self.data['targets']
         self.digits = []
         self.create_digits()
@@ -34,11 +40,10 @@ class RealDataset:
             image = -resize(image, (self.width, self.width), anti_aliasing=False)
 
             # Mapping the image from 0 to 1 with a lineal function
-            image = exposure.rescale_intensity(image)
+            # image = exposure.rescale_intensity(image)
 
             # Thresholding the image to accentuate the white background
-            threshold = threshold
-            image = np.where(image > threshold, image, 0)
+            # image = np.where(image > threshold, image, 0)
 
             # Transform the matrix(image) into a 1d vector
             image = image.reshape((self.width*self.width,))

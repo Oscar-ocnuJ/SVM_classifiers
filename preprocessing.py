@@ -1,56 +1,37 @@
 import time
-import os
-import matplotlib.pyplot as plt
-from real_dataset import RealDataset
+
 from sklearn import svm
-from tools import import_mnist_dataset, save_results, import_results
+from real_dataset import RealDataset
+from tools import import_mnist_dataset
 
 
 class Kernel:
-    def __init__(self, name, n_samples, length):
+    def __init__(self, name, n_samples):
         self.name = name
         self.n_samples = n_samples
-        self.accuracy_train_set = None
+        self.accuracy_train_test = None
         self.accuracy_test_set = None
-        self.accuracies_own_set = [None]*length
+        self.accuracy_own_set = None
         self.processing_time = None
 
 
 class TestPreprocessing:
     def __init__(self):
-        self.threshold_values = [0.01*x for x in range(0, 101)]
-
         kernels = list()
-        length = len(self.threshold_values)
-        kernels.append(Kernel('LinearSVC', 1_000, length))
-        kernels.append(Kernel('linear', 3_000, length))
-        kernels.append(Kernel('poly', 2_000, length))
-        kernels.append(Kernel('rbf', 12_000, length))
-        kernels.append(Kernel('sigmoid', 2_000, length))
+        kernels.append(Kernel('LinearSVC', 1000))
+        kernels.append(Kernel('linear', 1000))
+        kernels.append(Kernel('poly', 2000))
+        kernels.append(Kernel('rbf', 12000))
+        kernels.append(Kernel('sigmoid', 1000))
         self.kernels = kernels
 
-        # Fill object
-        base_name = 'thresholding'
-        if not os.path.exists('results/' + base_name + '.results_pkl'):
-            print("Test execution...")
-            self.thresholding()
-            self.save()
-        else:
-            print("Test made previously, loading results...")
-            loaded_data = import_results(base_name)
-            for kernel, i in zip(self.kernels, range(len(self.kernels))):
-                self.kernels[i].accuracy_train_set = loaded_data[kernel.name]['acc_train_set']
-                self.kernels[i].accuracy_test_set = loaded_data[kernel.name]['acc_test_set']
-                self.kernels[i].accuracies_own_set = loaded_data[kernel.name]['acc_own_set']
-                self.kernels[i].processing_time = loaded_data[kernel.name]['processing_time']
+        # Launch test
+        self.preprocessing()
 
-        # Plot results
-        self.plot_results(save=True)
-
-    def thresholding(self):
-
+    def preprocessing(self):
+        real_dataset = RealDataset(80)
         for kernel, i in zip(self.kernels, range(len(self.kernels))):
-            print(100*'-')
+            print(100 * '-')
             print('Testing a ' + kernel.name + ' SCV classifier...')
             if kernel.name == 'LinearSVC':
                 clf = svm.LinearSVC()
@@ -58,7 +39,7 @@ class TestPreprocessing:
                 clf = svm.SVC(kernel=kernel.name)
 
             # Importing dataset
-            dataset = import_mnist_dataset(kernel.n_samples)
+            dataset = import_mnist_dataset(kernel.n_samples, transform=False)
 
             # Splitting the dataset into train and test set
             test_size_ratio = 0.2
@@ -71,60 +52,20 @@ class TestPreprocessing:
             # Results in the dataset
             accuracy_train_set = clf.score(dataset.X_train, dataset.y_train)
             accuracy_test_set = clf.score(dataset.X_test, dataset.y_test)
-            print(f"Accuracy in training set: {accuracy_train_set}")
-            print(f"Accuracy in test set: {accuracy_test_set}")
+            print(f"Accuracy in training set: {100*accuracy_train_set} %")
+            print(f"Accuracy in test set: {100*accuracy_test_set} %")
             self.kernels[i].accuracy_train_set = accuracy_train_set
             self.kernels[i].accuracy_test_set = accuracy_test_set
 
-            # Results in the own set
-            for x, j in zip(self.threshold_values, range(len(self.threshold_values))):
-                real_dataset = RealDataset(threshold=x)
-                accuracy = clf.score(real_dataset.X, real_dataset.y)
-                self.kernels[i].accuracies_own_set[j] = accuracy
+            # Results in own set
+            accuracy_own_set = clf.score(real_dataset.X, real_dataset.y)
+            print(f"Accuracy in own set: {100*accuracy_own_set} %")
+            self.kernels[i].accuracy_own_set = accuracy_own_set
 
-            processing_time = round(time.process_time() - t, 4)
-            print(f"Processing time: {processing_time} s")
+            # Processing time
+            processing_time = time.process_time() - t
+            print(f"Processing time: {processing_time} [s]")
             self.kernels[i].processing_time = processing_time
 
-    def save(self):
-        # Create a dictionary to store the data
-        data_to_save = {}
-        for kernel in self.kernels:
-            data_to_save[kernel.name] = {}
-            data_to_save[kernel.name]['acc_train_set'] = kernel.accuracy_train_set
-            data_to_save[kernel.name]['acc_test_set'] = kernel.accuracy_test_set
-            data_to_save[kernel.name]['acc_own_set'] = kernel.accuracies_own_set
-            data_to_save[kernel.name]['processing_time'] = kernel.processing_time
 
-        # Save the data
-        filename = 'thresholding'
-        save_results(data_to_save, filename)
-
-    def plot_results(self, save=False):
-        fig_size = (6.4, 3.5)
-        plt.figure(figsize=fig_size)
-        plt.xlabel('Threshold value', fontsize=14)
-        plt.ylabel('Accuracy [%]')
-
-        for kernel in self.kernels:
-            accuracy_values = kernel.accuracies_own_set
-            threshold_values = self.threshold_values
-
-            plt.plot(threshold_values, accuracy_values, label=kernel.name)
-
-        plt.xlim([0, 1])
-        plt.grid(which='both', linestyle='dashed')
-        plt.legend(loc='best')
-        plt.title("Accuracy vs Threshold value", fontsize=14)
-        plt.tight_layout()
-        if save:
-            filename = 'thresholding'
-            path = 'figures/' + filename + '.eps'
-            if os.path.exists(path):
-                os.remove(path)
-            plt.savefig(path, format='eps')
-        plt.show()
-
-
-# Launch the test
-test_preprocessing = TestPreprocessing()
+test = TestPreprocessing()

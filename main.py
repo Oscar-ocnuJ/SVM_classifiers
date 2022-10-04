@@ -38,7 +38,7 @@ class TestPerformanceVsSamplesNumber:
         self.test()
 
     def test(self):
-        real_dataset = RealDataset()
+        real_dataset = RealDataset(80)
         for kernel, i in zip(self.kernels, range(len(self.kernels))):
             t0 = time.process_time()
             for n_samples, j in zip(self.dataset_sizes, range(len(self.dataset_sizes))):
@@ -94,6 +94,7 @@ class TestPerformanceVsSamplesNumber:
             ax1.set_ylabel('Accuracy [%]', color=color)
             l1 = ax1.semilogx(self.dataset_sizes, kernel.train_set_accuracies, '-bo', label='Training set')
             l2 = ax1.semilogx(self.dataset_sizes, kernel.test_set_accuracies, '--b^', label='Test set')
+            l4 = ax1.semilogx(self.dataset_sizes, kernel.real_set_accuracies, '-.bs', label='Own set')
             ax1.tick_params(axis='y', labelcolor=color)
             plt.grid(which='both', linestyle='dashed')
 
@@ -103,7 +104,7 @@ class TestPerformanceVsSamplesNumber:
             l3 = ax2.plot(self.dataset_sizes, kernel.processing_times, '-r>', label='Processing time')
             ax2.tick_params(axis='y', labelcolor=color)
 
-            ax2.legend(handles=l1+l2+l3, loc='lower right', fontsize=10)
+            ax2.legend(handles=l1+l2+l4+l3, loc='lower right', fontsize=10)
 
             plt.title("Performance of '" + kernel.name + "' classifier", fontsize=14)
 
@@ -119,7 +120,7 @@ class TestPerformanceVsSamplesNumber:
 
 # Launch the test
 launch = True
-file = 'performance_vs_samples'
+file = 'performance_vs_samples_re'
 if launch:
     performance_test = TestPerformanceVsSamplesNumber()
     save_results(performance_test, file)
@@ -128,4 +129,4 @@ else:
     performance_test = import_results(file)
 
 # Plot performance
-performance_test.plot_graphs(save=True)
+performance_test.plot_graphs(save=False)
