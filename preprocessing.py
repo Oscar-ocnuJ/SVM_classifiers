@@ -39,7 +39,7 @@ class TestPreprocessing:
                 clf = svm.SVC(kernel=kernel.name)
 
             # Importing dataset
-            dataset = import_mnist_dataset(kernel.n_samples, transform=True)
+            dataset = import_mnist_dataset(kernel.n_samples, transform=False)
 
             # Splitting the dataset into train and test set
             test_size_ratio = 0.2
