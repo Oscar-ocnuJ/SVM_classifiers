@@ -4,6 +4,8 @@
 /figures
 /RealSet
 /results
+/piechart.py
+/plot_preprocessing.py
 *.model_job
 *.model_pkl
 *.csv
