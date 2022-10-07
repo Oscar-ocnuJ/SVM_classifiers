@@ -99,13 +99,13 @@ class Dataset:
         self.X_test = self.scaler.transform(self.X_test)
 
         # Binary images
-        for i in range(len(self.X_train)):
-            thresh = threshold_otsu(self.X_train[i])
-            self.X_train[i] = np.where(self.X_train[i] > thresh, 1, 0)
-
-        for i in range(len(self.X_test)):
-            thresh = threshold_otsu(self.X_test[i])
-            self.X_test[i] = np.where(self.X_test[i] > thresh, 1, 0)
+        # for i in range(len(self.X_train)):
+        #     thresh = threshold_otsu(self.X_train[i])
+        #     self.X_train[i] = np.where(self.X_train[i] > thresh, int(1), int(0))
+        #
+        # for i in range(len(self.X_test)):
+        #     thresh = threshold_otsu(self.X_test[i])
+        #     self.X_test[i] = np.where(self.X_test[i] > thresh, int(1), int(0))
 
         print('Size of training set: ' + str(len(self.y_train)) + '/' + str(len(self.data)))
         print('Size of testing set: ' + str(len(self.y_test)) + '/' + str(len(self.data)))

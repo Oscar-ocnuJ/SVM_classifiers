@@ -43,7 +43,7 @@ class RealDataset:
             image = exposure.rescale_intensity(image)
 
             # Thresholding the image to accentuate the white background
-            image = np.where(image > threshold, 1, 0)
+            image = np.where(image > threshold, image, int(0))
 
             # Transform the matrix(image) into a 1d vector
             image = image.reshape((self.width*self.width,))

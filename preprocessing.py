@@ -6,10 +6,11 @@ from tools import import_mnist_dataset
 
 
 class Kernel:
-    def __init__(self, name, n_samples):
+    def __init__(self, name, n_samples, threshold=0.1):
         self.name = name
         self.n_samples = n_samples
-        self.accuracy_train_test = None
+        self.threshold = threshold
+        self.accuracy_train_set = None
         self.accuracy_test_set = None
         self.accuracy_own_set = None
         self.processing_time = None
@@ -18,7 +19,7 @@ class Kernel:
 class TestPreprocessing:
     def __init__(self):
         kernels = list()
-        kernels.append(Kernel('LinearSVC', 1000))
+        kernels.append(Kernel('LinearSVC', 1000, threshold=0.35))
         kernels.append(Kernel('linear', 1000))
         kernels.append(Kernel('poly', 2000))
         kernels.append(Kernel('rbf', 12000))
@@ -29,17 +30,17 @@ class TestPreprocessing:
         self.preprocessing()
 
     def preprocessing(self):
-        real_dataset = RealDataset(80)
         for kernel, i in zip(self.kernels, range(len(self.kernels))):
             print(100 * '-')
             print('Testing a ' + kernel.name + ' SCV classifier...')
+            real_dataset = RealDataset(80, threshold=kernel.threshold)
             if kernel.name == 'LinearSVC':
                 clf = svm.LinearSVC()
             else:
                 clf = svm.SVC(kernel=kernel.name)
 
             # Importing dataset
-            dataset = import_mnist_dataset(kernel.n_samples, transform=False)
+            dataset = import_mnist_dataset(kernel.n_samples, transform=True)
 
             # Splitting the dataset into train and test set
             test_size_ratio = 0.2
